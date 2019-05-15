@@ -16,22 +16,30 @@ GM_addStyle(`
 	.bottom { bottom: 0; }
 `);
 
+function refreshBar()
+{
+	$('#formInjector').remove();
+	language=readLanguage();
+	addBar();
+}
+
 function addBar()
 {
 	$('body').append('\
 		<div id="formInjector" class="formInjector top" align="center"> \
-			Pozycja: <select id="formInjector_position"><option value="top">Góra</option><option value="bottom">Dół</option></select> &nbsp; &nbsp; \
-			Ilość rekordów w bazie: <span id="formInjector_counter">0</span> &nbsp; &nbsp; \
-			<button id="formInjector_inject">Wstrzyknij dane</button> &nbsp; &nbsp; \
-			<button id="formInjector_autostart">Autostart</button> &nbsp; &nbsp; \
-			Pomijaj kolumny: <input type="text" id="formInjector_exclude" style="width: 100px;" /> &nbsp; &nbsp; \
-			<button id="formInjector_add">Dodaj do bazy</button> &nbsp; &nbsp; \
-			<button id="formInjector_clear">Wyczyść bazę</button> \
+			'+ui('language')+': <select id="formInjector_language"><option value="en">English</option><option value="pl">Polski</option></select> &nbsp; &nbsp; \
+			'+ui('position')+': <select id="formInjector_position"><option value="top">'+ui('top')+'</option><option value="bottom">'+ui('bottom')+'</option></select> &nbsp; &nbsp; \
+			'+ui('counter_desc')+': <span id="formInjector_counter">0</span> &nbsp; &nbsp; \
+			<button id="formInjector_inject">'+ui('inject_desc')+'</button> &nbsp; &nbsp; \
+			<button id="formInjector_autostart">'+ui('autostart')+'</button> &nbsp; &nbsp; \
+			'+ui('exclude_desc')+': <input type="text" id="formInjector_exclude" placeholder="1,2,3,..." style="width: 100px;" /> &nbsp; &nbsp; \
+			<button id="formInjector_add">'+ui('add_desc')+'</button> &nbsp; &nbsp; \
+			<button id="formInjector_clear">'+ui('clear_desc')+'</button> \
 			<span id="formInjector_form" style="display: none;"> \
 				<br /><br /> \
 				<textarea id="formInjector_input" style="width: 90%; height: 200px;"></textarea> \
 				<br /> \
-				<button id="formInjector_save">Zapisz</button> <button id="formInjector_cancel">Anuluj</button> \
+				<button id="formInjector_save">'+ui('save')+'</button> <button id="formInjector_cancel">'+ui('cancel')+'</button> \
 			</span> \
 		</div> \
 	');
@@ -42,7 +50,7 @@ function addBar()
 		showForm();
 	});
 	$('#formInjector_clear').click(function() {
-		if(confirm('Wyczyścić bazę?')) {
+		if(confirm(ui('clear_db'))) {
 			clearStorage();
 		}
 	});
@@ -69,7 +77,20 @@ function addBar()
 	$('#formInjector_exclude').change(function() {
 		saveExclude($(this).val());
 	});
+	$('#formInjector_language').change(function() {
+		saveLanguage($(this).val());
+		refreshBar();
+	});
 	readExclude();
+	switch(language) {
+		case 'en':
+		case 'pl':
+			break;
+
+		default:
+			language='en';
+	}
+	$('#formInjector_language').val(language);
 }
 
 function saveExclude(data)
@@ -77,6 +98,26 @@ function saveExclude(data)
 	data=data.trim().replace(/ /g,',').replace(/;/g,',');
 	localStorage.setItem('exclude',data);
 	readExclude();
+}
+
+function readExclude()
+{
+	$('#formInjector_exclude').val(localStorage.getItem('exclude'));
+}
+
+function saveLanguage(data)
+{
+	localStorage.setItem('language',data);
+}
+
+function readLanguage()
+{
+	var language=localStorage.getItem('language');
+	if(!language) {
+		language=detectBrowserLanguage();
+		saveLanguage(language);
+	}
+	return language;
 }
 
 function saveStorage(data)
@@ -95,11 +136,6 @@ function clearStorage()
 	localStorage.removeItem('data');
 	datastorage='';
 	countData();
-}
-
-function readExclude()
-{
-	$('#formInjector_exclude').val(localStorage.getItem('exclude'));
 }
 
 function autostartOn()
@@ -221,7 +257,53 @@ function submitForm()
 	$('form').find('input[type=submit]').trigger('click');
 }
 
+function detectBrowserLanguage()
+{
+	var language=navigator.language || navigator.userLanguage;
+	language=language.split('-')[0];
+	return language;
+}
+
+function ui(key)
+{
+	var l=eval('language_'+language);
+	return l.get(key);
+}
+
+var language_en=new Map([
+	['language', 'Language'],
+	['position', 'Position'],
+	['top', 'Top'],
+	['bottom', 'Bottom'],
+	['counter_desc', 'Rows in database'],
+	['inject_desc', 'Inject data'],
+	['autostart', 'Autostart'],
+	['exclude_desc', 'Exclude columns'],
+	['add_desc', 'Add to database'],
+	['clear_desc', 'Clear database'],
+	['save', 'Save'],
+	['cancel', 'Cancel'],
+	['clear_db', 'Do you want clear database?'],
+]);
+
+var language_pl=new Map([
+	['language', 'Język'],
+	['position', 'Pozycja'],
+	['top', 'Góra'],
+	['bottom', 'Dół'],
+	['counter_desc', 'Ilość rekordów w bazie'],
+	['inject_desc', 'Wstrzyknij dane'],
+	['autostart', 'Autostart'],
+	['exclude_desc', 'Pomijaj kolumny'],
+	['add_desc', 'Dodaj do bazy'],
+	['clear_desc', 'Wyczyść bazę'],
+	['save', 'Zapisz'],
+	['cancel', 'Anuluj'],
+	['clear_db', 'Wyczyścić baze?'],
+]);
+
 var datastorage;
+var language=readLanguage();
 
 (function() {
 	'use strict';
