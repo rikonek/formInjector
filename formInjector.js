@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         formInjector
 // @namespace    https://github.com/rikonek/formInjector
-// @version      0.1
+// @version      0.2
 // @description  Data form injector
 // @author       Rikon
 // @match        https://*/*
@@ -16,11 +16,80 @@ GM_addStyle(`
 	.bottom { bottom: 0; }
 `);
 
-function refreshBar()
+function init()
 {
-	$('#formInjector').remove();
-	language=readLanguage();
 	addBar();
+	changeBarPosition(getSession('position'));
+	setButtonAction();
+	setFormCounter();
+	setFormExclude();
+	setFormLanguage();
+	if(getAutostartStatus()=='on') {
+		getRow();
+		submitForm();
+	}
+}
+
+function set(key,value)
+{
+	localStorage.setItem(key,value);
+}
+
+function get(key)
+{
+	return localStorage.getItem(key);
+}
+
+function setSession(key,value)
+{
+	sessionStorage.setItem(key,value);
+}
+
+function getSession(key)
+{
+	return sessionStorage.getItem(key);
+}
+
+function getLanguage()
+{
+	if(!language) {
+		language=get('language');
+		if(!language) {
+			language=detectBrowserLanguage();
+			set('language',language);
+		}
+		switch(language) {
+			case 'en':
+			case 'pl':
+				break;
+
+			default:
+				language='en';
+		}
+	}
+	return language;
+}
+
+function setFormLanguage()
+{
+	$('#formInjector_language').val(language);
+}
+
+function detectBrowserLanguage()
+{
+	var l=navigator.language || navigator.userLanguage;
+	return l.split('-')[0];
+}
+
+function setData(d)
+{
+	data=d;
+	set('data',JSON.stringify(data));
+}
+
+function getData()
+{
+	return JSON.parse(get('data'));
 }
 
 function addBar()
@@ -43,23 +112,23 @@ function addBar()
 			</span> \
 		</div> \
 	');
+}
+
+function removeBar()
+{
+	$('#formInjector').remove();
+}
+
+function setButtonAction()
+{
+	$('#formInjector_language').change(function() {
+		language=$(this).val();
+		set('language',language);
+		removeBar();
+		init();
+	});
 	$('#formInjector_position').change(function(){
 		changeBarPosition($(this).val());
-	});
-	$('#formInjector_add').click(function() {
-		showForm();
-	});
-	$('#formInjector_clear').click(function() {
-		if(confirm(ui('clear_db'))) {
-			clearStorage();
-		}
-	});
-	$('#formInjector_cancel').click(function() {
-		hideForm();
-	});
-	$('#formInjector_save').click(function() {
-		saveForm($('#formInjector_input').val());
-		hideForm();
 	});
 	$('#formInjector_inject').click(function() {
 		getRow();
@@ -75,159 +144,134 @@ function addBar()
 		}
 	});
 	$('#formInjector_exclude').change(function() {
-		saveExclude($(this).val());
+		setExclude($(this).val());
+		setFormExclude();
 	});
-	$('#formInjector_language').change(function() {
-		saveLanguage($(this).val());
-		refreshBar();
+	$('#formInjector_add').click(function() {
+		$('#formInjector_form').show();
 	});
-	readExclude();
-	switch(language) {
-		case 'en':
-		case 'pl':
+	$('#formInjector_clear').click(function() {
+		if(confirm(ui('clear_db'))) {
+			clearStorage();
+		}
+	});
+	$('#formInjector_save').click(function() {
+		saveForm($('#formInjector_input').val());
+		hideForm();
+	});
+	$('#formInjector_cancel').click(function() {
+		hideForm();
+	});
+}
+
+function changeBarPosition(position)
+{
+	switch(position) {
+		case 'bottom':
+			$('#formInjector').removeClass('top').addClass('bottom');
 			break;
 
+		case 'top':
 		default:
-			language='en';
+			position='top';
+			$('#formInjector').addClass('top').removeClass('bottom');
 	}
-	$('#formInjector_language').val(language);
+	$('#formInjector_position').val(position);
+	setSession('position',position);
 }
 
-function saveExclude(data)
+function getRow()
 {
-	data=data.trim().replace(/ /g,',').replace(/;/g,',');
-	localStorage.setItem('exclude',data);
-	readExclude();
-}
-
-function readExclude()
-{
-	$('#formInjector_exclude').val(localStorage.getItem('exclude'));
-}
-
-function saveLanguage(data)
-{
-	localStorage.setItem('language',data);
-}
-
-function readLanguage()
-{
-	var language=localStorage.getItem('language');
-	if(!language) {
-		language=detectBrowserLanguage();
-		saveLanguage(language);
+	if(data.length==0) {
+		autostartOff();
+		return false;
 	}
-	return language;
+	$.each(data,function(key,row) {
+		d=row.split("\t");
+		return false;
+	});
+	if(injectData(d)) {
+		data.splice(0,1);
+		setData(data);
+		setFormCounter();
+	}
 }
 
-function saveStorage(data)
+function getAutostartStatus()
 {
-	localStorage.setItem('data',JSON.stringify(data));
-	datastorage=data;
-}
-
-function readStorage()
-{
-	return JSON.parse(localStorage.getItem('data'));
-}
-
-function clearStorage()
-{
-	localStorage.removeItem('data');
-	datastorage='';
-	countData();
+	var status=getSession('autostart');
+	if(status=="on") {
+		$('#formInjector_autostart').css('background-color','#7FFF00');
+	} else {
+		status="off";
+		$('#formInjector_autostart').css('background-color','');
+	}
+	return status;
 }
 
 function autostartOn()
 {
-	sessionStorage.setItem('autostart','on');
+	setSession('autostart','on');
 	$('#formInjector_autostart').css('background-color','#7FFF00');
 }
 
 function autostartOff()
 {
-	sessionStorage.setItem('autostart','off');
+	setSession('autostart','off');
 	$('#formInjector_autostart').css('background-color','');
 }
 
-function getAutostartStatus()
+function submitForm()
 {
-	var status=sessionStorage.getItem('autostart');
-	if(status=="on") {
-		$('#formInjector_autostart').css('background-color','#7FFF00');
-	} else {
-		status="off";
-	}
-	return status;
+	$('form').find('input[type=submit]').trigger('click');
 }
 
-function changeBarPosition(position)
+function setExclude(data)
 {
-	if(position=="bottom") {
-		$('#formInjector').removeClass('top').addClass('bottom');
-		$('#formInjector_position').val('bottom');
-		sessionStorage.setItem('position','bottom');
-	} else {
-		$('#formInjector').addClass('top').removeClass('bottom');
-		$('#formInjector_position').val('top');
-		sessionStorage.setItem('position','top');
-	}
+	data=data.trim().replace(/ /g,',').replace(/;/g,',').replace(/,,/g,',');
+	set('exclude',data);
 }
 
-function showForm()
+function setFormExclude()
 {
-		$('#formInjector_form').show();
+	$('#formInjector_exclude').val(get('exclude'));
 }
 
 function hideForm()
 {
-		$('#formInjector_input').val('');
-		$('#formInjector_form').hide();
+	$('#formInjector_input').val('');
+	$('#formInjector_form').hide();
 }
 
-function countData()
+function clearStorage()
+{
+	localStorage.removeItem('data');
+	data='';
+	setFormCounter();
+}
+
+function setFormCounter()
 {
 	var counter=0;
-	if(datastorage)
-	$.each(datastorage,function(key,row) {
-		counter++;
-	});
+	if(data) {
+		$.each(data,function(key,row) {
+			counter++;
+		});
+	}
 	$('#formInjector_counter').html(counter);
 }
 
-function saveForm(data)
+function saveForm(d)
 {
-	if(!data) return false;
-	data=data.trim().split("\n");
-	var olddata=JSON.parse(localStorage.getItem('data'));
+	if(!d) return false;
+	data=d.trim().split("\n");
+	var olddata=getData();
 	if(olddata!=null) data=olddata.concat(data);
-	saveData(data);
+	setData(data);
+	setFormCounter();
 }
 
-function saveData(data)
-{
-	saveStorage(data);
-	countData();
-}
-
-function getRow()
-{
-	var data;
-	if(datastorage.length==0) {
-		autostartOff();
-		return false;
-	}
-	$.each(datastorage,function(key,row) {
-		data=row.split("\t");
-		return false;
-	});
-	if(injectData(data)) {
-		datastorage.splice(0,1);
-		saveData(datastorage);
-	}
-}
-
-function injectData(data)
+function injectData(d)
 {
 	var form=$.find('input[type=text]:not(#formInjector_exclude), input[type=email], textarea:not(#formInjector_input)');
 	if(form.length==0) return false;
@@ -236,32 +280,20 @@ function injectData(data)
 		exclude=exclude.split(',').map(Number);
 		$.each(exclude,function(key,row) {
 			if($.isNumeric(row)) {
-				delete data[row-1];
+				delete d[row-1];
 			}
 		});
 		var new_data=[];
-		$.each(data,function(key,row) {
+		$.each(d,function(key,row) {
 			if(row!=undefined) new_data.push(row);
 		});
 	} else {
-		new_data=data;
+		new_data=d;
 	}
 	$.each(form,function(key,row) {
 		$(this).val(new_data[key]);
 	});
 	return true;
-}
-
-function submitForm()
-{
-	$('form').find('input[type=submit]').trigger('click');
-}
-
-function detectBrowserLanguage()
-{
-	var language=navigator.language || navigator.userLanguage;
-	language=language.split('-')[0];
-	return language;
 }
 
 function ui(key)
@@ -302,17 +334,10 @@ var language_pl=new Map([
 	['clear_db', 'Wyczyścić baze?'],
 ]);
 
-var datastorage;
-var language=readLanguage();
+var language=getLanguage();
+var data=getData();
 
 (function() {
 	'use strict';
-	addBar();
-	datastorage=readStorage();
-	countData();
-	changeBarPosition(sessionStorage.getItem('position'));
-	if(getAutostartStatus()=='on') {
-		getRow();
-		submitForm();
-	}
+	init();
 })();
