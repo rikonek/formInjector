@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         formInjector
 // @namespace    https://github.com/rikonek/formInjector
-// @version      0.3
+// @version      0.4
 // @description  Data form injector
 // @author       Rikon
 // @match        http*://*/*
@@ -22,17 +22,33 @@ function init()
 	changeBarPosition(getSession('position'));
 	setButtonAction();
 	setFormCounter();
+	setFormDelay();
 	setFormExclude();
 	setFormLanguage();
-	if(getAutostartStatus()=='on') {
-		getRow();
-		submitForm();
-	}
 	if(getJSON('template')!=null) {
 		setActive('#formInjector_template');
 		$('#formInjector_exludegroup').hide();
 	} else {
 		setDeactive('#formInjector_template');
+	}
+	if(getAutostartStatus()=='on') {
+		$('#formInjector_delaygroup').show();
+		if(getRow()) {
+			var delay=get('delay');
+			if(delay==null) delay=0;
+			if(delay>0) {
+				$('#autostart_counter').html(' ('+delay+')');
+				timeout=setInterval(function() {
+					delay--;
+					$('#autostart_counter').html(' ('+delay+')');
+					if(delay<1) {
+						submitForm();
+					}
+				},1000);
+			} else {
+				submitForm();
+			}
+		}
 	}
 }
 
@@ -106,7 +122,8 @@ function addBar()
 			'+ui('position')+': <select id="formInjector_position"><option value="top">'+ui('top')+'</option><option value="bottom">'+ui('bottom')+'</option></select> &nbsp; &nbsp; \
 			'+ui('counter_desc')+': <span id="formInjector_counter">0</span> &nbsp; &nbsp; \
 			<button id="formInjector_inject">'+ui('inject_desc')+'</button> &nbsp; &nbsp; \
-			<button id="formInjector_autostart">'+ui('autostart')+'</button> &nbsp; &nbsp; \
+			<button id="formInjector_autostart">'+ui('autostart')+'<span id="autostart_counter"></span></button> &nbsp; &nbsp; \
+			<span id="formInjector_delaygroup" style="display: none;">'+ui('delay_desc')+': <input type="text" id="formInjector_delay" class="formInjector" style="width: 40px;" /> &nbsp; &nbsp;</span> \
 			<span id="formInjector_exludegroup">'+ui('exclude_desc')+': <input type="text" id="formInjector_exclude" class="formInjector" placeholder="1,2,3,..." style="width: 80px;" /> &nbsp; &nbsp;</span> \
 			<button id="formInjector_template">'+ui('template_desc')+'</button> &nbsp; &nbsp; \
 			<button id="formInjector_add">'+ui('add_desc')+'</button> &nbsp; &nbsp; \
@@ -155,6 +172,9 @@ function setButtonAction()
 		} else {
 			autostartOff();
 		}
+	});
+	$('#formInjector_delay').change(function() {
+		set('delay',$(this).val());
 	});
 	$('#formInjector_exclude').change(function() {
 		setExclude($(this).val());
@@ -224,6 +244,7 @@ function getRow()
 		data.splice(0,1);
 		setData(data);
 		setFormCounter();
+		return true;
 	}
 }
 
@@ -253,12 +274,16 @@ function autostartOn()
 {
 	setSession('autostart','on');
 	setActive('#formInjector_autostart');
+	$('#formInjector_delaygroup').show();
 }
 
 function autostartOff()
 {
 	setSession('autostart','off');
 	setDeactive('#formInjector_autostart');
+	$('#formInjector_delaygroup').hide();
+	$('#autostart_counter').html('');
+	clearInterval(timeout);
 }
 
 function submitForm()
@@ -277,6 +302,13 @@ function setFormExclude()
 	$('#formInjector_exclude').val(get('exclude'));
 }
 
+function setFormDelay()
+{
+	var d=get('delay');
+	if(d==null) d=0;
+	$('#formInjector_delay').val(d);
+}
+
 function hideForm()
 {
 	$('#formInjector_input').val('');
@@ -291,7 +323,7 @@ function hideTemplateForm()
 
 function clearStorage()
 {
-	localStorage.removeItem('data');
+	localStorage.removeItem('formInjector_data');
 	data='';
 	setFormCounter();
 }
@@ -390,6 +422,7 @@ var language_en=new Map([
 	['cancel', 'Cancel'],
 	['clear_db', 'Do you want clear database?'],
 	['template_desc', 'Template'],
+	['delay_desc', 'Delay'],
 ]);
 
 var language_pl=new Map([
@@ -407,10 +440,12 @@ var language_pl=new Map([
 	['cancel', 'Anuluj'],
 	['clear_db', 'Wyczyścić baze?'],
 	['template_desc', 'Szablon'],
+	['delay_desc', 'Opóźnienie'],
 ]);
 
 var language=getLanguage();
 var data=getJSON('data');
+var timeout;
 
 (function() {
 	'use strict';
