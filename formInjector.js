@@ -1,16 +1,16 @@
 // ==UserScript==
 // @name         formInjector
 // @namespace    https://github.com/rikonek/formInjector
-// @version      0.2
+// @version      0.3
 // @description  Data form injector
 // @author       Rikon
-// @match        https://*/*
+// @match        http*://*/*
 // @grant        GM_addStyle
 // @require      http://code.jquery.com/jquery-3.3.1.min.js
 // ==/UserScript==
 
 GM_addStyle(`
-	div.formInjector { position: fixed; z-index: 100; left: 0; width: 100%; padding: 10px; background-color: yellow; font-family: Arial; font-size: 12px; }
+	div.formInjector { position: fixed; z-index: 10000; left: 0; width: 100%; padding: 10px; background-color: yellow; font-family: Arial; font-size: 12px; }
 	div.formInjector select { width: auto; }
 	.top { top: 0; }
 	.bottom { bottom: 0; }
@@ -28,26 +28,32 @@ function init()
 		getRow();
 		submitForm();
 	}
+	if(getJSON('template')!=null) {
+		setActive('#formInjector_template');
+		$('#formInjector_exludegroup').hide();
+	} else {
+		setDeactive('#formInjector_template');
+	}
 }
 
 function set(key,value)
 {
-	localStorage.setItem(key,value);
+	localStorage.setItem('formInjector_'+key,value);
 }
 
 function get(key)
 {
-	return localStorage.getItem(key);
+	return localStorage.getItem('formInjector_'+key);
 }
 
 function setSession(key,value)
 {
-	sessionStorage.setItem(key,value);
+	sessionStorage.setItem('formInjector_'+key,value);
 }
 
 function getSession(key)
 {
-	return sessionStorage.getItem(key);
+	return sessionStorage.getItem('formInjector_'+key);
 }
 
 function getLanguage()
@@ -87,9 +93,9 @@ function setData(d)
 	set('data',JSON.stringify(data));
 }
 
-function getData()
+function getJSON(key)
 {
-	return JSON.parse(get('data'));
+	return JSON.parse(get(key));
 }
 
 function addBar()
@@ -101,14 +107,21 @@ function addBar()
 			'+ui('counter_desc')+': <span id="formInjector_counter">0</span> &nbsp; &nbsp; \
 			<button id="formInjector_inject">'+ui('inject_desc')+'</button> &nbsp; &nbsp; \
 			<button id="formInjector_autostart">'+ui('autostart')+'</button> &nbsp; &nbsp; \
-			'+ui('exclude_desc')+': <input type="text" id="formInjector_exclude" placeholder="1,2,3,..." style="width: 100px;" /> &nbsp; &nbsp; \
+			<span id="formInjector_exludegroup">'+ui('exclude_desc')+': <input type="text" id="formInjector_exclude" class="formInjector" placeholder="1,2,3,..." style="width: 80px;" /> &nbsp; &nbsp;</span> \
+			<button id="formInjector_template">'+ui('template_desc')+'</button> &nbsp; &nbsp; \
 			<button id="formInjector_add">'+ui('add_desc')+'</button> &nbsp; &nbsp; \
 			<button id="formInjector_clear">'+ui('clear_desc')+'</button> \
 			<span id="formInjector_form" style="display: none;"> \
 				<br /><br /> \
-				<textarea id="formInjector_input" style="width: 90%; height: 200px;"></textarea> \
+				<textarea id="formInjector_input" class="formInjector" style="width: 90%; height: 200px;"></textarea> \
 				<br /> \
 				<button id="formInjector_save">'+ui('save')+'</button> <button id="formInjector_cancel">'+ui('cancel')+'</button> \
+			</span> \
+			<span id="formInjector_templateform" style="display: none;"> \
+				<br /><br /> \
+				<textarea id="formInjector_templateinput" class="formInjector" style="width: 90%; height: 200px;"></textarea> \
+				<br /> \
+				<button id="formInjector_templatesave">'+ui('save')+'</button> <button id="formInjector_templatecancel">'+ui('cancel')+'</button> \
 			</span> \
 		</div> \
 	');
@@ -147,7 +160,24 @@ function setButtonAction()
 		setExclude($(this).val());
 		setFormExclude();
 	});
+	$('#formInjector_template').click(function() {
+		hideForm();
+		$('#formInjector_templateform').show();
+		d=getJSON('template');
+		if(d!=null) {
+			d=d.join("\n");
+			$('#formInjector_templateinput').val(d);
+		}
+	});
+	$('#formInjector_templatesave').click(function() {
+		saveTemplateForm($('#formInjector_templateinput').val());
+		hideTemplateForm();
+	});
+	$('#formInjector_templatecancel').click(function() {
+		hideTemplateForm();
+	});
 	$('#formInjector_add').click(function() {
+		hideTemplateForm();
 		$('#formInjector_form').show();
 	});
 	$('#formInjector_clear').click(function() {
@@ -182,7 +212,7 @@ function changeBarPosition(position)
 
 function getRow()
 {
-	if(data.length==0) {
+	if(data==null || data.length==0) {
 		autostartOff();
 		return false;
 	}
@@ -197,14 +227,24 @@ function getRow()
 	}
 }
 
+function setActive(key)
+{
+	$(key).css('background-color','#7FFF00');
+}
+
+function setDeactive(key)
+{
+	$(key).css('background-color','');
+}
+
 function getAutostartStatus()
 {
 	var status=getSession('autostart');
 	if(status=="on") {
-		$('#formInjector_autostart').css('background-color','#7FFF00');
+		setActive('#formInjector_autostart');
 	} else {
 		status="off";
-		$('#formInjector_autostart').css('background-color','');
+		setDeactive('#formInjector_autostart');
 	}
 	return status;
 }
@@ -212,13 +252,13 @@ function getAutostartStatus()
 function autostartOn()
 {
 	setSession('autostart','on');
-	$('#formInjector_autostart').css('background-color','#7FFF00');
+	setActive('#formInjector_autostart');
 }
 
 function autostartOff()
 {
 	setSession('autostart','off');
-	$('#formInjector_autostart').css('background-color','');
+	setDeactive('#formInjector_autostart');
 }
 
 function submitForm()
@@ -243,6 +283,12 @@ function hideForm()
 	$('#formInjector_form').hide();
 }
 
+function hideTemplateForm()
+{
+	$('#formInjector_templateinput').val('');
+	$('#formInjector_templateform').hide();
+}
+
 function clearStorage()
 {
 	localStorage.removeItem('data');
@@ -265,30 +311,57 @@ function saveForm(d)
 {
 	if(!d) return false;
 	data=d.trim().split("\n");
-	var olddata=getData();
+	var olddata=getJSON('data');
 	if(olddata!=null) data=olddata.concat(data);
 	setData(data);
 	setFormCounter();
 }
 
+function saveTemplateForm(d)
+{
+	d=d.trim().split("\n");
+	if(d=='') {
+		d=null;
+		setDeactive('#formInjector_template');
+		$('#formInjector_exludegroup').show();
+	} else {
+		setActive('#formInjector_template');
+		$('#formInjector_exludegroup').hide();
+	}
+	set('template',JSON.stringify(d));
+}
+
 function injectData(d)
 {
-	var form=$.find('input[type=text]:not(#formInjector_exclude), input[type=email], textarea:not(#formInjector_input)');
+	var form=$.find('input[type=text]:not(.formInjector), input[type=email], textarea:not(.formInjector)');
 	if(form.length==0) return false;
 	var exclude=$('#formInjector_exclude').val();
-	if(exclude) {
-		exclude=exclude.split(',').map(Number);
-		$.each(exclude,function(key,row) {
-			if($.isNumeric(row)) {
-				delete d[row-1];
+	var template=getJSON('template');
+	if(template) {
+		var new_data=[];
+		$.each(template,function(key,row) {
+			var line=row.match(/\[(\d+)\]/);
+			if(line) {
+				new_data.push(d[line[1]-1]);
+			} else {
+				new_data.push(row);
 			}
 		});
-		var new_data=[];
-		$.each(d,function(key,row) {
-			if(row!=undefined) new_data.push(row);
-		});
 	} else {
-		new_data=d;
+		if(exclude) {
+			exclude=exclude.split(',').map(Number);
+			$.each(exclude,function(key,row) {
+				if($.isNumeric(row)) {
+					delete d[row-1];
+				}
+			});
+			var new_data=[];
+			$.each(d,function(key,row) {
+				if(row!=undefined) new_data.push(row);
+			});
+		} else {
+			new_data=d;
+		}
 	}
 	$.each(form,function(key,row) {
 		$(this).val(new_data[key]);
@@ -316,6 +389,7 @@ var language_en=new Map([
 	['save', 'Save'],
 	['cancel', 'Cancel'],
 	['clear_db', 'Do you want clear database?'],
+	['template_desc', 'Template'],
 ]);
 
 var language_pl=new Map([
@@ -332,10 +406,11 @@ var language_pl=new Map([
 	['save', 'Zapisz'],
 	['cancel', 'Anuluj'],
 	['clear_db', 'Wyczyścić baze?'],
+	['template_desc', 'Szablon'],
 ]);
 
 var language=getLanguage();
-var data=getData();
+var data=getJSON('data');
 
 (function() {
 	'use strict';
