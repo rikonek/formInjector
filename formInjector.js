@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         formInjector
 // @namespace    https://github.com/rikonek/formInjector
-// @version      0.4
+// @version      0.5
 // @description  Data form injector
 // @author       Rikon
 // @match        http*://*/*
@@ -422,7 +422,7 @@ var language_en=new Map([
 	['cancel', 'Cancel'],
 	['clear_db', 'Do you want clear database?'],
 	['template_desc', 'Template'],
-	['delay_desc', 'Delay'],
+	['delay_desc', 'Delay [s]'],
 ]);
 
 var language_pl=new Map([
@@ -440,7 +440,7 @@ var language_pl=new Map([
 	['cancel', 'Anuluj'],
 	['clear_db', 'Wyczyścić baze?'],
 	['template_desc', 'Szablon'],
-	['delay_desc', 'Opóźnienie'],
+	['delay_desc', 'Opóźnienie [s]'],
 ]);
 
 var language=getLanguage();
