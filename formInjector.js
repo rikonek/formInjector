@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         formInjector
 // @namespace    https://github.com/rikonek/formInjector
-// @version      0.5
+// @version      0.6
 // @description  Data form injector
 // @author       Rikon
 // @match        http*://*/*
@@ -15,6 +15,8 @@ GM_addStyle(`
 	.top { top: 0; }
 	.bottom { bottom: 0; }
 `);
+
+var form=$.find('input[type=text]:not(.formInjector), input[type=number], input[type=email], textarea:not(.formInjector)');
 
 function init()
 {
@@ -127,7 +129,8 @@ function addBar()
 			<span id="formInjector_exludegroup">'+ui('exclude_desc')+': <input type="text" id="formInjector_exclude" class="formInjector" placeholder="1,2,3,..." style="width: 80px;" /> &nbsp; &nbsp;</span> \
 			<button id="formInjector_template">'+ui('template_desc')+'</button> &nbsp; &nbsp; \
 			<button id="formInjector_add">'+ui('add_desc')+'</button> &nbsp; &nbsp; \
-			<button id="formInjector_clear">'+ui('clear_desc')+'</button> \
+			<button id="formInjector_clear">'+ui('clear_desc')+'</button> &nbsp; &nbsp; \
+			<button id="formInjector_showformfields">'+ui('showformfields_desc')+'</button> \
 			<span id="formInjector_form" style="display: none;"> \
 				<br /><br /> \
 				<textarea id="formInjector_input" class="formInjector" style="width: 90%; height: 200px;"></textarea> \
@@ -211,6 +214,9 @@ function setButtonAction()
 	});
 	$('#formInjector_cancel').click(function() {
 		hideForm();
+	});
+	$('#formInjector_showformfields').click(function() {
+		showFormFields();
 	});
 }
 
@@ -363,9 +369,15 @@ function saveTemplateForm(d)
 	set('template',JSON.stringify(d));
 }
 
+function showFormFields()
+{
+	$.each(form,function(key,row) {
+		$(this).css('border-color','red').val(key+1);
+	});
+}
+
 function injectData(d)
 {
-	var form=$.find('input[type=text]:not(.formInjector), input[type=email], textarea:not(.formInjector)');
 	if(form.length==0) return false;
 	var exclude=$('#formInjector_exclude').val();
 	var template=getJSON('template');
@@ -423,6 +435,7 @@ var language_en=new Map([
 	['clear_db', 'Do you want clear database?'],
 	['template_desc', 'Template'],
 	['delay_desc', 'Delay [s]'],
+	['showformfields_desc', 'Show form fields'],
 ]);
 
 var language_pl=new Map([
@@ -441,6 +454,7 @@ var language_pl=new Map([
 	['clear_db', 'Wyczyścić baze?'],
 	['template_desc', 'Szablon'],
 	['delay_desc', 'Opóźnienie [s]'],
+	['showformfields_desc', 'Pokaż pola formularza'],
 ]);
 
 var language=getLanguage();
