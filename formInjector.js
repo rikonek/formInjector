@@ -16,10 +16,9 @@ GM_addStyle(`
 	.bottom { bottom: 0; }
 `);
 
-var form=$.find('input[type=text]:not(.formInjector), input[type=number], input[type=email], textarea:not(.formInjector)');
+var form = $.find('input[type=text]:not(.formInjector), input[type=number], input[type=email], textarea:not(.formInjector)');
 
-function init()
-{
+function init() {
 	addBar();
 	changeBarPosition(getSession('position'));
 	setButtonAction();
@@ -27,26 +26,26 @@ function init()
 	setFormDelay();
 	setFormExclude();
 	setFormLanguage();
-	if(getJSON('template')!=null) {
+	if (getJSON('template') != null) {
 		setActive('#formInjector_template');
 		$('#formInjector_exludegroup').hide();
 	} else {
 		setDeactive('#formInjector_template');
 	}
-	if(getAutostartStatus()=='on') {
+	if (getAutostartStatus() == 'on') {
 		$('#formInjector_delaygroup').show();
-		if(getRow()) {
-			var delay=get('delay');
-			if(delay==null) delay=0;
-			if(delay>0) {
-				$('#autostart_counter').html(' ('+delay+')');
-				timeout=setInterval(function() {
+		if (getRow()) {
+			var delay = get('delay');
+			if (delay == null) delay = 0;
+			if (delay > 0) {
+				$('#autostart_counter').html(' (' + delay + ')');
+				timeout = setInterval(function () {
 					delay--;
-					$('#autostart_counter').html(' ('+delay+')');
-					if(delay<1) {
+					$('#autostart_counter').html(' (' + delay + ')');
+					if (delay < 1) {
 						submitForm();
 					}
-				},1000);
+				}, 1000);
 			} else {
 				submitForm();
 			}
@@ -54,372 +53,340 @@ function init()
 	}
 }
 
-function set(key,value)
-{
-	localStorage.setItem('formInjector_'+key,value);
+function set(key, value) {
+	localStorage.setItem('formInjector_' + key, value);
 }
 
-function get(key)
-{
-	return localStorage.getItem('formInjector_'+key);
+function get(key) {
+	return localStorage.getItem('formInjector_' + key);
 }
 
-function setSession(key,value)
-{
-	sessionStorage.setItem('formInjector_'+key,value);
+function setSession(key, value) {
+	sessionStorage.setItem('formInjector_' + key, value);
 }
 
-function getSession(key)
-{
-	return sessionStorage.getItem('formInjector_'+key);
+function getSession(key) {
+	return sessionStorage.getItem('formInjector_' + key);
 }
 
-function getLanguage()
-{
-	if(!language) {
-		language=get('language');
-		if(!language) {
-			language=detectBrowserLanguage();
-			set('language',language);
+function getLanguage() {
+	if (!language) {
+		language = get('language');
+		if (!language) {
+			language = detectBrowserLanguage();
+			set('language', language);
 		}
-		switch(language) {
+		switch (language) {
 			case 'en':
 			case 'pl':
 				break;
 
 			default:
-				language='en';
+				language = 'en';
 		}
 	}
 	return language;
 }
 
-function setFormLanguage()
-{
+function setFormLanguage() {
 	$('#formInjector_language').val(language);
 }
 
-function detectBrowserLanguage()
-{
-	var l=navigator.language || navigator.userLanguage;
+function detectBrowserLanguage() {
+	var l = navigator.language || navigator.userLanguage;
 	return l.split('-')[0];
 }
 
-function setData(d)
-{
-	data=d;
-	set('data',JSON.stringify(data));
+function setData(d) {
+	data = d;
+	set('data', JSON.stringify(data));
 }
 
-function getJSON(key)
-{
+function getJSON(key) {
 	return JSON.parse(get(key));
 }
 
-function addBar()
-{
+function addBar() {
 	$('body').append('\
 		<div id="formInjector" class="formInjector top" align="center"> \
-			'+ui('language')+': <select id="formInjector_language"><option value="en">English</option><option value="pl">Polski</option></select> &nbsp; &nbsp; \
-			'+ui('position')+': <select id="formInjector_position"><option value="top">'+ui('top')+'</option><option value="bottom">'+ui('bottom')+'</option></select> &nbsp; &nbsp; \
-			'+ui('counter_desc')+': <span id="formInjector_counter">0</span> &nbsp; &nbsp; \
-			<button id="formInjector_inject">'+ui('inject_desc')+'</button> &nbsp; &nbsp; \
-			<button id="formInjector_autostart">'+ui('autostart')+'<span id="autostart_counter"></span></button> &nbsp; &nbsp; \
-			<span id="formInjector_delaygroup" style="display: none;">'+ui('delay_desc')+': <input type="text" id="formInjector_delay" class="formInjector" style="width: 40px;" /> &nbsp; &nbsp;</span> \
-			<span id="formInjector_exludegroup">'+ui('exclude_desc')+': <input type="text" id="formInjector_exclude" class="formInjector" placeholder="1,2,3,..." style="width: 80px;" /> &nbsp; &nbsp;</span> \
-			<button id="formInjector_template">'+ui('template_desc')+'</button> &nbsp; &nbsp; \
-			<button id="formInjector_add">'+ui('add_desc')+'</button> &nbsp; &nbsp; \
-			<button id="formInjector_clear">'+ui('clear_desc')+'</button> &nbsp; &nbsp; \
-			<button id="formInjector_showformfields">'+ui('showformfields_desc')+'</button> \
+			'+ ui('language') + ': <select id="formInjector_language"><option value="en">English</option><option value="pl">Polski</option></select> &nbsp; &nbsp; \
+			'+ ui('position') + ': <select id="formInjector_position"><option value="top">' + ui('top') + '</option><option value="bottom">' + ui('bottom') + '</option></select> &nbsp; &nbsp; \
+			'+ ui('counter_desc') + ': <span id="formInjector_counter">0</span> &nbsp; &nbsp; \
+			<button id="formInjector_inject">'+ ui('inject_desc') + '</button> &nbsp; &nbsp; \
+			<button id="formInjector_autostart">'+ ui('autostart') + '<span id="autostart_counter"></span></button> &nbsp; &nbsp; \
+			<span id="formInjector_delaygroup" style="display: none;">'+ ui('delay_desc') + ': <input type="text" id="formInjector_delay" class="formInjector" style="width: 40px;" /> &nbsp; &nbsp;</span> \
+			<span id="formInjector_exludegroup">'+ ui('exclude_desc') + ': <input type="text" id="formInjector_exclude" class="formInjector" placeholder="1,2,3,..." style="width: 80px;" /> &nbsp; &nbsp;</span> \
+			<button id="formInjector_template">'+ ui('template_desc') + '</button> &nbsp; &nbsp; \
+			<button id="formInjector_add">'+ ui('add_desc') + '</button> &nbsp; &nbsp; \
+			<button id="formInjector_clear">'+ ui('clear_desc') + '</button> &nbsp; &nbsp; \
+			<button id="formInjector_showformfields">'+ ui('showformfields_desc') + '</button> \
 			<span id="formInjector_form" style="display: none;"> \
 				<br /><br /> \
 				<textarea id="formInjector_input" class="formInjector" style="width: 90%; height: 200px;"></textarea> \
 				<br /> \
-				<button id="formInjector_save">'+ui('save')+'</button> <button id="formInjector_cancel">'+ui('cancel')+'</button> \
+				<button id="formInjector_save">'+ ui('save') + '</button> <button id="formInjector_cancel">' + ui('cancel') + '</button> \
 			</span> \
 			<span id="formInjector_templateform" style="display: none;"> \
 				<br /><br /> \
 				<textarea id="formInjector_templateinput" class="formInjector" style="width: 90%; height: 200px;"></textarea> \
 				<br /> \
-				<button id="formInjector_templatesave">'+ui('save')+'</button> <button id="formInjector_templatecancel">'+ui('cancel')+'</button> \
+				<button id="formInjector_templatesave">'+ ui('save') + '</button> <button id="formInjector_templatecancel">' + ui('cancel') + '</button> \
 			</span> \
 		</div> \
 	');
 }
 
-function removeBar()
-{
+function removeBar() {
 	$('#formInjector').remove();
 }
 
-function setButtonAction()
-{
-	$('#formInjector_language').change(function() {
-		language=$(this).val();
-		set('language',language);
+function setButtonAction() {
+	$('#formInjector_language').change(function () {
+		language = $(this).val();
+		set('language', language);
 		removeBar();
 		init();
 	});
-	$('#formInjector_position').change(function(){
+	$('#formInjector_position').change(function () {
 		changeBarPosition($(this).val());
 	});
-	$('#formInjector_inject').click(function() {
+	$('#formInjector_inject').click(function () {
 		getRow();
-		if(getAutostartStatus()=='on') {
+		if (getAutostartStatus() == 'on') {
 			submitForm();
 		}
 	});
-	$('#formInjector_autostart').click(function() {
-		if(getAutostartStatus()=="off") {
+	$('#formInjector_autostart').click(function () {
+		if (getAutostartStatus() == "off") {
 			autostartOn();
 		} else {
 			autostartOff();
 		}
 	});
-	$('#formInjector_delay').change(function() {
-		set('delay',$(this).val());
+	$('#formInjector_delay').change(function () {
+		set('delay', $(this).val());
 	});
-	$('#formInjector_exclude').change(function() {
+	$('#formInjector_exclude').change(function () {
 		setExclude($(this).val());
 		setFormExclude();
 	});
-	$('#formInjector_template').click(function() {
+	$('#formInjector_template').click(function () {
 		hideForm();
 		$('#formInjector_templateform').show();
-		d=getJSON('template');
-		if(d!=null) {
-			d=d.join("\n");
+		d = getJSON('template');
+		if (d != null) {
+			d = d.join("\n");
 			$('#formInjector_templateinput').val(d);
 		}
 	});
-	$('#formInjector_templatesave').click(function() {
+	$('#formInjector_templatesave').click(function () {
 		saveTemplateForm($('#formInjector_templateinput').val());
 		hideTemplateForm();
 	});
-	$('#formInjector_templatecancel').click(function() {
+	$('#formInjector_templatecancel').click(function () {
 		hideTemplateForm();
 	});
-	$('#formInjector_add').click(function() {
+	$('#formInjector_add').click(function () {
 		hideTemplateForm();
 		$('#formInjector_form').show();
 	});
-	$('#formInjector_clear').click(function() {
-		if(confirm(ui('clear_db'))) {
+	$('#formInjector_clear').click(function () {
+		if (confirm(ui('clear_db'))) {
 			clearStorage();
 		}
 	});
-	$('#formInjector_save').click(function() {
+	$('#formInjector_save').click(function () {
 		saveForm($('#formInjector_input').val());
 		hideForm();
 	});
-	$('#formInjector_cancel').click(function() {
+	$('#formInjector_cancel').click(function () {
 		hideForm();
 	});
-	$('#formInjector_showformfields').click(function() {
+	$('#formInjector_showformfields').click(function () {
 		showFormFields();
 	});
 }
 
-function changeBarPosition(position)
-{
-	switch(position) {
+function changeBarPosition(position) {
+	switch (position) {
 		case 'bottom':
 			$('#formInjector').removeClass('top').addClass('bottom');
 			break;
 
 		case 'top':
 		default:
-			position='top';
+			position = 'top';
 			$('#formInjector').addClass('top').removeClass('bottom');
 	}
 	$('#formInjector_position').val(position);
-	setSession('position',position);
+	setSession('position', position);
 }
 
-function getRow()
-{
-	if(data==null || data.length==0) {
+function getRow() {
+	if (data == null || data.length == 0) {
 		autostartOff();
 		return false;
 	}
-	$.each(data,function(key,row) {
-		d=row.split("\t");
+	$.each(data, function (key, row) {
+		d = row.split("\t");
 		return false;
 	});
-	if(injectData(d)) {
-		data.splice(0,1);
+	if (injectData(d)) {
+		data.splice(0, 1);
 		setData(data);
 		setFormCounter();
 		return true;
 	}
 }
 
-function setActive(key)
-{
-	$(key).css('background-color','#7FFF00');
+function setActive(key) {
+	$(key).css('background-color', '#7FFF00');
 }
 
-function setDeactive(key)
-{
-	$(key).css('background-color','');
+function setDeactive(key) {
+	$(key).css('background-color', '');
 }
 
-function getAutostartStatus()
-{
-	var status=getSession('autostart');
-	if(status=="on") {
+function getAutostartStatus() {
+	var status = getSession('autostart');
+	if (status == "on") {
 		setActive('#formInjector_autostart');
 	} else {
-		status="off";
+		status = "off";
 		setDeactive('#formInjector_autostart');
 	}
 	return status;
 }
 
-function autostartOn()
-{
-	setSession('autostart','on');
+function autostartOn() {
+	setSession('autostart', 'on');
 	setActive('#formInjector_autostart');
 	$('#formInjector_delaygroup').show();
 }
 
-function autostartOff()
-{
-	setSession('autostart','off');
+function autostartOff() {
+	setSession('autostart', 'off');
 	setDeactive('#formInjector_autostart');
 	$('#formInjector_delaygroup').hide();
 	$('#autostart_counter').html('');
 	clearInterval(timeout);
 }
 
-function submitForm()
-{
+function submitForm() {
 	$('form').find('input[type=submit]').trigger('click');
 }
 
-function setExclude(data)
-{
-	data=data.trim().replace(/ /g,',').replace(/;/g,',').replace(/,,/g,',');
-	set('exclude',data);
+function setExclude(data) {
+	data = data.trim().replace(/ /g, ',').replace(/;/g, ',').replace(/,,/g, ',');
+	set('exclude', data);
 }
 
-function setFormExclude()
-{
+function setFormExclude() {
 	$('#formInjector_exclude').val(get('exclude'));
 }
 
-function setFormDelay()
-{
-	var d=get('delay');
-	if(d==null) d=0;
+function setFormDelay() {
+	var d = get('delay');
+	if (d == null) d = 0;
 	$('#formInjector_delay').val(d);
 }
 
-function hideForm()
-{
+function hideForm() {
 	$('#formInjector_input').val('');
 	$('#formInjector_form').hide();
 }
 
-function hideTemplateForm()
-{
+function hideTemplateForm() {
 	$('#formInjector_templateinput').val('');
 	$('#formInjector_templateform').hide();
 }
 
-function clearStorage()
-{
+function clearStorage() {
 	localStorage.removeItem('formInjector_data');
-	data='';
+	data = '';
 	setFormCounter();
 }
 
-function setFormCounter()
-{
-	var counter=0;
-	if(data) {
-		$.each(data,function(key,row) {
+function setFormCounter() {
+	var counter = 0;
+	if (data) {
+		$.each(data, function (key, row) {
 			counter++;
 		});
 	}
 	$('#formInjector_counter').html(counter);
 }
 
-function saveForm(d)
-{
-	if(!d) return false;
-	data=d.trim().split("\n");
-	var olddata=getJSON('data');
-	if(olddata!=null) data=olddata.concat(data);
+function saveForm(d) {
+	if (!d) return false;
+	data = d.trim().split("\n");
+	var olddata = getJSON('data');
+	if (olddata != null) data = olddata.concat(data);
 	setData(data);
 	setFormCounter();
 }
 
-function saveTemplateForm(d)
-{
-	d=d.trim().split("\n");
-	if(d=='') {
-		d=null;
+function saveTemplateForm(d) {
+	d = d.trim().split("\n");
+	if (d == '') {
+		d = null;
 		setDeactive('#formInjector_template');
 		$('#formInjector_exludegroup').show();
 	} else {
 		setActive('#formInjector_template');
 		$('#formInjector_exludegroup').hide();
 	}
-	set('template',JSON.stringify(d));
+	set('template', JSON.stringify(d));
 }
 
-function showFormFields()
-{
-	$.each(form,function(key,row) {
-		$(this).css('border-color','red').val(key+1);
+function showFormFields() {
+	$.each(form, function (key, row) {
+		$(this).css('border-color', 'red').val(key + 1);
 	});
 }
 
-function injectData(d)
-{
-	if(form.length==0) return false;
-	var exclude=$('#formInjector_exclude').val();
-	var template=getJSON('template');
-	if(template) {
-		var new_data=[];
-		$.each(template,function(key,row) {
-			var line=row.match(/\[(\d+)\]/);
-			if(line) {
-				new_data.push(d[line[1]-1]);
+function injectData(d) {
+	if (form.length == 0) return false;
+	var exclude = $('#formInjector_exclude').val();
+	var template = getJSON('template');
+	if (template) {
+		var new_data = [];
+		$.each(template, function (key, row) {
+			var line = row.match(/\[(\d+)\]/);
+			if (line) {
+				new_data.push(d[line[1] - 1]);
 			} else {
 				new_data.push(row);
 			}
 		});
 	} else {
-		if(exclude) {
-			exclude=exclude.split(',').map(Number);
-			$.each(exclude,function(key,row) {
-				if($.isNumeric(row)) {
-					delete d[row-1];
+		if (exclude) {
+			exclude = exclude.split(',').map(Number);
+			$.each(exclude, function (key, row) {
+				if ($.isNumeric(row)) {
+					delete d[row - 1];
 				}
 			});
-			var new_data=[];
-			$.each(d,function(key,row) {
-				if(row!=undefined) new_data.push(row);
+			var new_data = [];
+			$.each(d, function (key, row) {
+				if (row != undefined) new_data.push(row);
 			});
 		} else {
-			new_data=d;
+			new_data = d;
 		}
 	}
-	$.each(form,function(key,row) {
+	$.each(form, function (key, row) {
 		$(this).val(new_data[key]);
 	});
 	return true;
 }
 
-function ui(key)
-{
-	var l=eval('language_'+language);
+function ui(key) {
+	var l = eval('language_' + language);
 	return l.get(key);
 }
 
-var language_en=new Map([
+var language_en = new Map([
 	['language', 'Language'],
 	['position', 'Position'],
 	['top', 'Top'],
@@ -438,7 +405,7 @@ var language_en=new Map([
 	['showformfields_desc', 'Show form fields'],
 ]);
 
-var language_pl=new Map([
+var language_pl = new Map([
 	['language', 'Język'],
 	['position', 'Pozycja'],
 	['top', 'Góra'],
@@ -457,11 +424,11 @@ var language_pl=new Map([
 	['showformfields_desc', 'Pokaż pola formularza'],
 ]);
 
-var language=getLanguage();
-var data=getJSON('data');
+var language = getLanguage();
+var data = getJSON('data');
 var timeout;
 
-(function() {
+(function () {
 	'use strict';
 	init();
 })();
